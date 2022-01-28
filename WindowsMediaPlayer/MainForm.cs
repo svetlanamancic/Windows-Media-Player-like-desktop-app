@@ -4,9 +4,11 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -85,9 +87,9 @@ namespace WindowsMediaPlayer
         {
             if (!File.Exists(videoPath))
                 return;
-            wmp.URL = videoPath;
             loaded = true;
-            playing = false;
+            playing = true;
+            wmp.URL = videoPath;
         }
 
         private void Play()
@@ -144,35 +146,17 @@ namespace WindowsMediaPlayer
         {
             if (!loaded)
                 return;
+
             cm.Hide();
             Pause();
-            System.Drawing.Image ret = null;
-            Bitmap bitmap = new Bitmap(wmp.Width, wmp.Height);
-            Graphics g = Graphics.FromImage(bitmap);
-
-            this.BringToFront();
-            g.CopyFromScreen(
-                wmp.PointToScreen(
-                    new System.Drawing.Point()).X,
-                wmp.PointToScreen(
-                    new System.Drawing.Point()).Y,
-                0, 0,
-                new System.Drawing.Size(
-                    wmp.Width,
-                    wmp.Height)
-                );
-
-            using (MemoryStream ms = new MemoryStream())
-            {
-                bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                ret = System.Drawing.Image.FromStream(ms);
-
-                var sImg = new Bitmap(ret);
-                sImg.Save("C:\\CVIDEO\\VIMAGE.JPG", System.Drawing.Imaging.ImageFormat.Jpeg);
-            }
-            g.Dispose();
+            this.Activate(); // activate i focus da prebaci formu iz pozadine da bi na slici bila samo forma
+            this.Focus();
+            SendKeys.Send("{PRTSC}");
+            Image im = new Bitmap(Clipboard.GetImage());
+            im.Save("C:\\CVIDEO\\VIMAGE.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
             Play();
 
+            return;
         }
 
         private bool Command(string command, bool fromFile, string arg)
@@ -290,5 +274,7 @@ namespace WindowsMediaPlayer
                 }
             }
         }
+
+      
     }
 }
