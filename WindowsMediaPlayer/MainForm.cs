@@ -142,9 +142,11 @@ namespace WindowsMediaPlayer
 
             cm.Hide();
             Pause();
-            this.Activate();
-            this.Focus();
-            SendKeys.Send("{PRTSC}");
+            this.Invoke((Action)delegate {
+                this.Activate();
+                this.Focus();
+            });
+            SendKeys.SendWait("{PRTSC}");
             Image im = new Bitmap(Clipboard.GetImage());
             im.Save("C:\\CVIDEO\\VIMAGE.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
             im.Dispose();
