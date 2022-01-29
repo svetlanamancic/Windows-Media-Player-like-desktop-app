@@ -20,9 +20,9 @@ namespace WindowsMediaPlayer
         string path = "C:\\CVIDEO";
         string controlFile = "\\VIDEO.txt";
         string lastCommand = "";
-        bool cmdRecognised = false;
+        bool cmdRecognised = true;
         bool loaded = false;
-        bool playing = false;
+        int playing;
 
 
         public MainForm()
@@ -48,7 +48,6 @@ namespace WindowsMediaPlayer
             timer.Tick += timer_Tick;
 
             seekForm = new SeekForm();
-
         }
 
         private void OpenFile()
@@ -88,7 +87,6 @@ namespace WindowsMediaPlayer
             if (!File.Exists(videoPath))
                 return;
             loaded = true;
-            playing = true;
             wmp.URL = videoPath;
         }
 
@@ -96,29 +94,27 @@ namespace WindowsMediaPlayer
         {
             if (!loaded)
                 return;
-            if(playing == false)
-            {
-                playing = true;
-                wmp.Ctlcontrols.play();
-            }
+
+            playing = 1;
+            wmp.Ctlcontrols.play();
+            
         }
 
         private void Pause()
         {
             if (!loaded)
                 return;
-            if (playing == true)
-            {
-                playing = false;
-                wmp.Ctlcontrols.pause();
-            }
+            
+            playing = 0;
+            wmp.Ctlcontrols.pause();
+            
         }
 
         private void Stop()
         {
             if (!loaded)
                 return;
-            playing = false;
+            playing = 0;
             wmp.Ctlcontrols.stop();
         }
 
@@ -126,14 +122,11 @@ namespace WindowsMediaPlayer
         {
             if (!loaded)
                 return;
-            if (playing == false)
+            wmp.Ctlcontrols.currentPosition = s;
+            wmp.Ctlcontrols.play();
+            if (playing == 0)
             {
-                wmp.Ctlcontrols.currentPosition = s;
                 wmp.Ctlcontrols.pause();
-            }
-            else
-            {
-                wmp.Ctlcontrols.currentPosition = s;
             }
         }
 
@@ -149,14 +142,13 @@ namespace WindowsMediaPlayer
 
             cm.Hide();
             Pause();
-            this.Activate(); // activate i focus da prebaci formu iz pozadine da bi na slici bila samo forma
+            this.Activate();
             this.Focus();
             SendKeys.Send("{PRTSC}");
             Image im = new Bitmap(Clipboard.GetImage());
             im.Save("C:\\CVIDEO\\VIMAGE.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
+            im.Dispose();
             Play();
-
-            return;
         }
 
         private bool Command(string command, bool fromFile, string arg)
@@ -216,18 +208,18 @@ namespace WindowsMediaPlayer
                 string line;
                 line = File.ReadLines(path+controlFile).First();
 
-                if (String.Compare(line, lastCommand) != 0)// ako se promenila komanda u odnosu na poslednje citanje
+                if (String.Compare(line, lastCommand) != 0 && !String.IsNullOrEmpty(line))
                 {
                     lastCommand = line;
                     string[] command = line.Split(' ');
-                    if (String.Compare(command[0].ToLower(), "load") == 0) //ako je load prilagodi putanju jer je komanda LOAD ime_fajla
+                    if (String.Compare(command[0].ToLower(), "load") == 0)
                     {
                         command[1] = path + "\\" + command[1];
                     }
                     if(String.Compare(command[0].ToLower(),"load") == 0 || String.Compare(command[0].ToLower(), "seek") == 0)
-                        cmdRecognised = Command(command[0], true, command[1]);
+                        cmdRecognised &= Command(command[0], true, command[1]);
                     else
-                        cmdRecognised = Command(command[0], true, null);
+                        cmdRecognised &= Command(command[0], true, null);
 
                 }
 
@@ -241,7 +233,7 @@ namespace WindowsMediaPlayer
         private void cm_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             ToolStripItem item = e.ClickedItem;
-            cmdRecognised = Command(item.Text, false, null);
+            Command(item.Text, false, null);
         }
 
         private void wmp_MouseUpEvent(object sender, AxWMPLib._WMPOCXEvents_MouseUpEvent e)
@@ -275,6 +267,10 @@ namespace WindowsMediaPlayer
             }
         }
 
-      
+        private void wmp_PlayStateChange_1(object sender, AxWMPLib._WMPOCXEvents_PlayStateChangeEvent e)
+        {
+            if (loaded && playing == 0)
+                Pause();
+        }
     }
 }
