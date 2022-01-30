@@ -142,15 +142,25 @@ namespace WindowsMediaPlayer
 
             cm.Hide();
             Pause();
-            this.Invoke((Action)delegate {
+            this.Invoke((Action)delegate
+            {
                 this.Activate();
                 this.Focus();
             });
             SendKeys.SendWait("{PRTSC}");
             Image im = new Bitmap(Clipboard.GetImage());
+            
+            if (Screen.AllScreens.Length > 1)
+            {
+                Bitmap bmp = new Bitmap(im);
+                Screen mpScreen = Screen.FromControl(this);
+                im = bmp.Clone(mpScreen.Bounds, bmp.PixelFormat);
+            }
+
             im.Save("C:\\CVIDEO\\VIMAGE.jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
             im.Dispose();
             Play();
+
         }
 
         private bool Command(string command, bool fromFile, string arg)
